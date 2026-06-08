@@ -36,6 +36,10 @@ A lightweight, full-stack kanban board built with **React + Vite** (frontend) an
 
 ![Demo 2](public/demo2.png)
 
+### Screen Recording
+
+[Watch the demo video](public/Screen%20Recording%202026-06-09%20012728.mp4)
+
 ---
 
 ## Tech Stack
