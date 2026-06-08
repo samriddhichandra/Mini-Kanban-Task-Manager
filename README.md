@@ -34,10 +34,6 @@ A lightweight, full-stack kanban board built with **React + Vite** (frontend) an
 
 ### Screenshot 1
 
-![Demo 1](public/demo1.png)
-
-### Screenshot 2
-
 ![Demo 2](public/demo2.png)
 
 ---
