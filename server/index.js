@@ -53,7 +53,18 @@ app.get("/tasks", (_req, res) => {
   res.json(tasks);
 });
 
-app.post("/tasks", (req, res) => {
+const apiRouter = express.Router();
+
+apiRouter.use((req, res, next) => {
+  console.log("API router request:", req.method, req.originalUrl);
+  next();
+});
+
+apiRouter.get("/tasks", (_req, res) => {
+  res.json(tasks);
+});
+
+function createTask(req, res) {
   const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
   const status = req.body.status || "todo";
   const priority = req.body.priority || "medium";
@@ -89,9 +100,11 @@ app.post("/tasks", (req, res) => {
   tasks.push(task);
 
   return res.status(201).json(task);
-});
+}
 
-app.put("/tasks/:id", (req, res) => {
+apiRouter.post("/tasks", createTask);
+
+function updateTaskStatus(req, res) {
   const id = Number(req.params.id);
 
   if (!Number.isInteger(id)) {
@@ -111,9 +124,10 @@ app.put("/tasks/:id", (req, res) => {
   task.status = req.body.status;
 
   return res.json(task);
-});
+}
 
-app.delete("/tasks/:id", (req, res) => {
+apiRouter.put("/tasks/:id", updateTaskStatus);
+apiRouter.delete("/tasks/:id", (req, res) => {
   const id = Number(req.params.id);
 
   if (!Number.isInteger(id)) {
@@ -131,12 +145,14 @@ app.delete("/tasks/:id", (req, res) => {
   return res.status(204).send();
 });
 
+app.use("/api", apiRouter);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, "..", "dist");
 
 app.use(express.static(distPath));
-app.get(/^(?!\/tasks).*/, (_req, res) => {
+app.get(/^(?!\/(?:api|tasks)).*/, (_req, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 

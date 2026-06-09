@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const API_URL = "/tasks";
+const API_URL = "/api/tasks";
 
 const columns = [
   { id: "todo", title: "To Do", caption: "Ideas and planned work" },

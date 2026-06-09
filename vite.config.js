@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/tasks": "http://localhost:3001",
+      "/api/tasks": "http://localhost:3001",
     },
   },
 });
