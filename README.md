@@ -103,7 +103,7 @@ The repository includes demo media in `public/`.
 
 ### Demo Video
 
-[Watch the demo video](public/demo_v.mp4)
+[Watch the demo video](public\demo_v.mp4)
 
 ### Asset List
 
