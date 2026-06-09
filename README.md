@@ -93,22 +93,25 @@ The repository includes demo media in `public/`.
 
 ### Screenshots
 
-![Mini Kanban landing screen](public/demo1.png)
+![Mini Kanban landing screen](public/demo_1.png)
 
-![Mini Kanban dashboard view](public/demo2.png)
+![Mini Kanban dashboard view](public/demo_2.png)
 
-![Mini Kanban task workflow](public/demo3.png)
+![Mini Kanban task workflow](public/demo_3.png)
+
+![Mini Kanban responsive/task state](public/demo_4.png)
 
 ### Demo Video
 
-[Watch the demo video](public/Demo_v.mp4)
+[Watch the demo video](public/demo_v.mp4)
 
 ### Asset List
 
-- Screenshot: `public/demo1.png`
-- Screenshot: `public/demo2.png`
-- Screenshot: `public/demo3.png`
-- Demo video: `public/Demo_v.mp4`
+- Screenshot: `public/demo_1.png`
+- Screenshot: `public/demo_2.png`
+- Screenshot: `public/demo_3.png`
+- Screenshot: `public/demo_4.png`
+- Demo video: `public/demo_v.mp4`
 - Favicon: `public/favicon.png`
 
 ---
@@ -234,10 +237,11 @@ mini-kanban-task-manager/
 |       |-- data.js        # In-memory task store for serverless handlers
 |       `-- index.js       # Vercel handler for list/create
 |-- public/
-|   |-- demo1.png
-|   |-- demo2.png
-|   |-- demo3.png
-|   |-- Demo_v.mp4
+|   |-- demo_1.png
+|   |-- demo_2.png
+|   |-- demo_3.png
+|   |-- demo_4.png
+|   |-- demo_v.mp4
 |   `-- favicon.png
 |-- server/
 |   `-- index.js           # Local Express API and static production server
