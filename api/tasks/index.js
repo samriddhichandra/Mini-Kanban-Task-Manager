@@ -1,4 +1,4 @@
-import { getTasks, createTask } from "./data";
+import { getTasks, createTask } from "./data.js";
 
 function isValidStatus(status) {
   return status === "todo" || status === "done";

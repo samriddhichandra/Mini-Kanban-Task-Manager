@@ -60,7 +60,7 @@ function Toast({ message }) {
 
   return (
     <div className="toast" role="status">
-      <span aria-hidden="true">i</span>
+      <span aria-hidden="true">OK</span>
       {message}
     </div>
   );
@@ -90,6 +90,112 @@ function ConfirmDialog({ task, onCancel, onConfirm }) {
   );
 }
 
+function EditTaskDialog({ task, onCancel, onSave, isSaving }) {
+  const [draft, setDraft] = useState({
+    title: task?.title || "",
+    priority: task?.priority || "medium",
+    status: task?.status || "todo",
+    dueDate: task?.dueDate || "",
+  });
+
+  useEffect(() => {
+    if (!task) {
+      return;
+    }
+
+    setDraft({
+      title: task.title || "",
+      priority: task.priority || "medium",
+      status: task.status || "todo",
+      dueDate: task.dueDate || "",
+    });
+  }, [task]);
+
+  if (!task) {
+    return null;
+  }
+
+  function updateDraft(field, value) {
+    setDraft((currentDraft) => ({ ...currentDraft, [field]: value }));
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    onSave(task.id, {
+      title: draft.title.trim(),
+      priority: draft.priority,
+      status: draft.status,
+      dueDate: draft.dueDate,
+    });
+  }
+
+  return (
+    <div className="dialog-backdrop" role="presentation">
+      <section className="confirm-dialog edit-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+        <h2 id="edit-title">Edit task</h2>
+        <form className="edit-form" onSubmit={handleSubmit}>
+          <label>
+            <span>Title</span>
+            <input
+              type="text"
+              value={draft.title}
+              onChange={(event) => updateDraft("title", event.target.value)}
+              disabled={isSaving}
+            />
+          </label>
+          <div className="edit-form-grid">
+            <label>
+              <span>Priority</span>
+              <select
+                value={draft.priority}
+                onChange={(event) => updateDraft("priority", event.target.value)}
+                disabled={isSaving}
+              >
+                {priorities.map((priority) => (
+                  <option key={priority.id} value={priority.id}>
+                    {priority.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Status</span>
+              <select
+                value={draft.status}
+                onChange={(event) => updateDraft("status", event.target.value)}
+                disabled={isSaving}
+              >
+                {columns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Due date</span>
+            <input
+              type="date"
+              value={draft.dueDate}
+              onChange={(event) => updateDraft("dueDate", event.target.value)}
+              disabled={isSaving}
+            />
+          </label>
+          <div className="dialog-actions">
+            <button className="secondary-button" type="button" onClick={onCancel} disabled={isSaving}>
+              Cancel
+            </button>
+            <button className="task-save-button" type="submit" disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save task"}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 function EmptyState({ title }) {
   return (
     <div className="empty-state">
@@ -103,7 +209,7 @@ function EmptyState({ title }) {
   );
 }
 
-function TaskCard({ task, onDragStart, onAskDelete, onChangeStatus }) {
+function TaskCard({ task, onDragStart, onAskDelete, onAskEdit, onChangeStatus }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -133,7 +239,7 @@ function TaskCard({ task, onDragStart, onAskDelete, onChangeStatus }) {
 
   return (
     <article
-      className="task-card"
+      className={`task-card ${task.priority}${isMenuOpen ? " menu-open" : ""}`}
       draggable
       onDragStart={(event) => onDragStart(event, task.id)}
     >
@@ -149,7 +255,7 @@ function TaskCard({ task, onDragStart, onAskDelete, onChangeStatus }) {
             aria-expanded={isMenuOpen}
             onClick={toggleMenu}
           >
-            ...
+            <span aria-hidden="true">...</span>
           </button>
           {isMenuOpen && (
             <div className="menu-dropdown" role="menu">
@@ -168,6 +274,16 @@ function TaskCard({ task, onDragStart, onAskDelete, onChangeStatus }) {
                 </button>
               ))}
               <div className="menu-divider" />
+              <button
+                type="button"
+                className="menu-item"
+                onClick={() => {
+                  onAskEdit(task);
+                  closeMenu();
+                }}
+              >
+                Edit task
+              </button>
               <button
                 type="button"
                 className="menu-item menu-delete-item"
@@ -193,10 +309,10 @@ function TaskCard({ task, onDragStart, onAskDelete, onChangeStatus }) {
   );
 }
 
-function KanbanColumn({ column, tasks, onDropTask, onDragStart, onAskDelete, onChangeStatus }) {
+function KanbanColumn({ column, tasks, onDropTask, onDragStart, onAskDelete, onAskEdit, onChangeStatus }) {
   return (
     <section
-      className="column"
+      className={`column ${column.id}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => onDropTask(event, column.id)}
       aria-labelledby={`${column.id}-heading`}
@@ -218,10 +334,57 @@ function KanbanColumn({ column, tasks, onDropTask, onDragStart, onAskDelete, onC
               task={task}
               onDragStart={onDragStart}
               onAskDelete={onAskDelete}
+              onAskEdit={onAskEdit}
               onChangeStatus={onChangeStatus}
             />
           ))
         )}
+      </div>
+    </section>
+  );
+}
+
+function LandingPage({ onOpen }) {
+  return (
+    <section className="landing-page" aria-labelledby="landing-title">
+      <div className="landing-copy">
+        <span className="eyebrow">Workspace dashboard</span>
+        <h1 id="landing-title">Mini Kanban Task Manager</h1>
+        <p>Shape the day, sort the work, and move every task from idea to done with a clean visual board.</p>
+        <button className="landing-button" type="button" onClick={onOpen}>
+          Open Task Manager
+        </button>
+      </div>
+
+      <div className="landing-art" aria-hidden="true">
+        <div className="orbit orbit-one" />
+        <div className="orbit orbit-two" />
+        <div className="floating-card card-one">
+          <span />
+          <strong>Plan sprint</strong>
+          <small>Medium</small>
+        </div>
+        <div className="floating-card card-two">
+          <span />
+          <strong>Review tasks</strong>
+          <small>Done</small>
+        </div>
+        <div className="floating-card card-three">
+          <span />
+          <strong>Ship update</strong>
+          <small>High</small>
+        </div>
+        <div className="mini-board">
+          <div>
+            <span />
+            <span />
+            <span />
+          </div>
+          <div>
+            <span />
+            <span />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -240,7 +403,11 @@ export default function App() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [taskToEdit, setTaskToEdit] = useState(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [theme, setTheme] = useState("light");
+  const [isBoardOpen, setIsBoardOpen] = useState(false);
+  const [isOpeningBoard, setIsOpeningBoard] = useState(false);
 
   const groupedTasks = useMemo(
     () =>
@@ -331,7 +498,7 @@ export default function App() {
 
     try {
       const updatedTask = await requestJson(`${API_URL}/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
@@ -368,15 +535,61 @@ export default function App() {
     }
   }
 
+  async function handleUpdateTask(id, updates) {
+    if (!updates.title.trim()) {
+      setError("Title must not be empty.");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setError("");
+
+    try {
+      const updatedTask = await requestJson(`${API_URL}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => (task.id === id ? updatedTask : task)),
+      );
+      setTaskToEdit(null);
+      showToast("Task updated");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
+  function openBoard() {
+    setIsOpeningBoard(true);
+    window.setTimeout(() => {
+      setIsBoardOpen(true);
+      setIsOpeningBoard(false);
+    }, 420);
+  }
+
   return (
-    <main className={`app-shell ${theme}`}>
+    <main className={`app-shell ${theme}${isOpeningBoard ? " opening-board" : ""}${isBoardOpen ? " board-open" : ""}`}>
       <Toast message={toast} />
       <ConfirmDialog
         task={taskToDelete}
         onCancel={() => setTaskToDelete(null)}
         onConfirm={handleDeleteTask}
       />
+      <EditTaskDialog
+        task={taskToEdit}
+        onCancel={() => setTaskToEdit(null)}
+        onSave={handleUpdateTask}
+        isSaving={isSavingEdit}
+      />
 
+      {!isBoardOpen ? <LandingPage onOpen={openBoard} /> : null}
+
+      {isBoardOpen ? (
+        <div className="manager-view">
       <header className="dashboard-header">
         <div>
           <span className="eyebrow">Workspace dashboard</span>
@@ -384,11 +597,11 @@ export default function App() {
           <p>Plan work, track momentum, and keep delivery visible across your board.</p>
         </div>
         <div className="header-actions">
-          <button className="secondary-button" type="button" onClick={loadTasks} disabled={isLoading}>
+          <button className="secondary-button icon-button" type="button" onClick={loadTasks} disabled={isLoading}>
             Refresh
           </button>
           <button
-            className="theme-toggle"
+            className="theme-toggle icon-button"
             type="button"
             onClick={() => setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"))}
           >
@@ -398,32 +611,28 @@ export default function App() {
       </header>
 
       <section className="analytics-grid" aria-label="Board analytics">
-        <article className="analytics-card">
-          <div className="analytics-icon">T</div>
+        <article className="analytics-card total">
           <span>Total tasks</span>
           <strong>{tasks.length}</strong>
           <div className="progress-track">
             <span style={{ width: tasks.length ? "100%" : "8%" }} />
           </div>
         </article>
-        <article className="analytics-card">
-          <div className="analytics-icon">D</div>
+        <article className="analytics-card done">
           <span>Done</span>
           <strong>{groupedTasks.done.length}</strong>
           <div className="progress-track">
             <span style={{ width: `${tasks.length ? (groupedTasks.done.length / tasks.length) * 100 : 8}%` }} />
           </div>
         </article>
-        <article className="analytics-card">
-          <div className="analytics-icon">C</div>
+        <article className="analytics-card completion">
           <span>Completion</span>
           <strong>{completionRate}%</strong>
           <div className="progress-track">
             <span style={{ width: `${Math.max(completionRate, 8)}%` }} />
           </div>
         </article>
-        <article className="analytics-card">
-          <div className="analytics-icon">H</div>
+        <article className="analytics-card priority">
           <span>High priority</span>
           <strong>{highPriorityCount}</strong>
           <div className="progress-track">
@@ -509,11 +718,14 @@ export default function App() {
               onDropTask={handleDropTask}
               onDragStart={handleDragStart}
               onAskDelete={setTaskToDelete}
+              onAskEdit={setTaskToEdit}
               onChangeStatus={moveTask}
             />
           ))}
         </section>
       )}
+        </div>
+      ) : null}
     </main>
   );
 }

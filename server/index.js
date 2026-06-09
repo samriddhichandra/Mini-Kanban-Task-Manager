@@ -49,6 +49,42 @@ function isValidDueDate(dueDate) {
   return dueDate === "" || typeof dueDate === "undefined" || !Number.isNaN(Date.parse(dueDate));
 }
 
+function getTaskUpdates(body) {
+  const updates = {};
+
+  if (Object.prototype.hasOwnProperty.call(body, "title")) {
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    if (!title) {
+      return { error: "Title must not be empty." };
+    }
+    updates.title = title;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    if (!isValidStatus(body.status)) {
+      return { error: 'Status must be "todo" or "done".' };
+    }
+    updates.status = body.status;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "priority")) {
+    if (!isValidPriority(body.priority)) {
+      return { error: 'Priority must be "low", "medium", or "high".' };
+    }
+    updates.priority = body.priority;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "dueDate")) {
+    const dueDate = typeof body.dueDate === "string" ? body.dueDate : "";
+    if (!isValidDueDate(dueDate)) {
+      return { error: "Due date must be a valid date." };
+    }
+    updates.dueDate = dueDate;
+  }
+
+  return { updates };
+}
+
 app.get("/tasks", (_req, res) => {
   res.json(tasks);
 });
@@ -104,15 +140,11 @@ function createTask(req, res) {
 
 apiRouter.post("/tasks", createTask);
 
-function updateTaskStatus(req, res) {
+function updateTask(req, res) {
   const id = Number(req.params.id);
 
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: "Task ID must be a number." });
-  }
-
-  if (!isValidStatus(req.body.status)) {
-    return res.status(400).json({ error: 'Status must be "todo" or "done".' });
   }
 
   const task = findTask(id);
@@ -121,12 +153,23 @@ function updateTaskStatus(req, res) {
     return res.status(404).json({ error: "Task not found." });
   }
 
-  task.status = req.body.status;
+  const { updates, error } = getTaskUpdates(req.body || {});
+
+  if (error) {
+    return res.status(400).json({ error });
+  }
+
+  if (!updates || Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "At least one task field is required." });
+  }
+
+  Object.assign(task, updates);
 
   return res.json(task);
 }
 
-apiRouter.put("/tasks/:id", updateTaskStatus);
+apiRouter.put("/tasks/:id", updateTask);
+apiRouter.patch("/tasks/:id", updateTask);
 apiRouter.delete("/tasks/:id", (req, res) => {
   const id = Number(req.params.id);
 

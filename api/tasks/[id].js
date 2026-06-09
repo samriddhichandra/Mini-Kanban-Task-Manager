@@ -1,4 +1,4 @@
-import { getTaskById, updateTask, deleteTask } from "./data";
+import { getTaskById, updateTask, deleteTask } from "./data.js";
 
 function isValidStatus(status) {
   return status === "todo" || status === "done";
@@ -10,6 +10,42 @@ function isValidPriority(priority) {
 
 function isValidDueDate(dueDate) {
   return dueDate === "" || typeof dueDate === "undefined" || !Number.isNaN(Date.parse(dueDate));
+}
+
+function getTaskUpdates(body) {
+  const updates = {};
+
+  if (Object.prototype.hasOwnProperty.call(body, "title")) {
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    if (!title) {
+      return { error: "Title must not be empty." };
+    }
+    updates.title = title;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    if (!isValidStatus(body.status)) {
+      return { error: 'Status must be "todo" or "done".' };
+    }
+    updates.status = body.status;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "priority")) {
+    if (!isValidPriority(body.priority)) {
+      return { error: 'Priority must be "low", "medium", or "high".' };
+    }
+    updates.priority = body.priority;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "dueDate")) {
+    const dueDate = typeof body.dueDate === "string" ? body.dueDate : "";
+    if (!isValidDueDate(dueDate)) {
+      return { error: "Due date must be a valid date." };
+    }
+    updates.dueDate = dueDate;
+  }
+
+  return { updates };
 }
 
 export default function handler(req, res) {
@@ -32,19 +68,24 @@ export default function handler(req, res) {
     return;
   }
 
-  if (req.method === "PUT") {
+  if (req.method === "PUT" || req.method === "PATCH") {
     if (!currentTask) {
       res.status(404).json({ error: "Task not found." });
       return;
     }
 
-    const status = req.body.status;
-    if (!isValidStatus(status)) {
-      res.status(400).json({ error: 'Status must be "todo" or "done".' });
+    const { updates, error } = getTaskUpdates(req.body || {});
+    if (error) {
+      res.status(400).json({ error });
       return;
     }
 
-    const updatedTask = updateTask(taskId, { status });
+    if (!updates || Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "At least one task field is required." });
+      return;
+    }
+
+    const updatedTask = updateTask(taskId, updates);
     res.status(200).json(updatedTask);
     return;
   }
@@ -60,6 +101,6 @@ export default function handler(req, res) {
     return;
   }
 
-  res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
+  res.setHeader("Allow", ["GET", "PUT", "PATCH", "DELETE"]);
   res.status(405).json({ error: `Method ${req.method} not allowed.` });
 }
