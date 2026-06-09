@@ -2,8 +2,8 @@
   color: #162033;
   background: #f4f0e8;
   font-family:
-    Inter, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+    Inter, "Segoe UI", Roboto, Helvetica, Arial, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
   font-synthesis: none;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
@@ -910,19 +910,6 @@ select:disabled {
   font-weight: 760;
 }
 
-.avatar {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--brand-dark), var(--violet));
-  color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 950;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-}
-
 .dot-separator {
   width: 4px;
   height: 4px;
@@ -1014,6 +1001,11 @@ select:disabled {
   animation: pop-in 180ms ease both;
 }
 
+.edit-dialog {
+  width: min(520px, 100%);
+  padding: 26px;
+}
+
 .dialog-icon {
   display: grid;
   width: 42px;
@@ -1029,6 +1021,8 @@ select:disabled {
 .confirm-dialog h2 {
   margin: 0;
   font-size: 1.25rem;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 .confirm-dialog p {
@@ -1040,6 +1034,93 @@ select:disabled {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.edit-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ink);
+}
+
+.edit-form label span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.edit-form input,
+.edit-form select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.96rem;
+  font-weight: 650;
+  outline: none;
+  padding: 0 13px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.edit-form input:hover,
+.edit-form select:hover {
+  border-color: var(--line-strong);
+}
+
+.edit-form input:focus,
+.edit-form select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 18%, transparent);
+}
+
+.edit-form input[type="date"] {
+  color-scheme: light;
+}
+
+.dark .edit-form input[type="date"] {
+  color-scheme: dark;
+}
+
+.task-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+  color: #ffffff;
+  font-weight: 850;
+  padding: 0 17px;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.task-save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.task-save-button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.26);
+  outline-offset: 3px;
 }
 
 .danger-button {
@@ -1310,5 +1391,18 @@ select:disabled {
     right: 12px;
     left: 12px;
     justify-content: center;
+  }
+
+  .edit-dialog {
+    padding: 20px;
+  }
+
+  .edit-form-grid,
+  .dialog-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-actions {
+    display: grid;
   }
 }

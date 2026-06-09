@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const API_URL = "/api/tasks";
+const STORAGE_KEY = "mini-kanban-tasks";
+const isHostedRuntime =
+  typeof window !== "undefined" && window.location.hostname.endsWith("vercel.app");
 
 const columns = [
   { id: "todo", title: "To Do", caption: "Ideas and planned work" },
@@ -13,7 +16,51 @@ const priorities = [
   { id: "high", label: "High" },
 ];
 
-const avatars = ["AK", "LM", "RS", "ND", "VP"];
+const initialTasks = [
+  {
+    id: 1,
+    title: "System work",
+    status: "todo",
+    priority: "medium",
+    dueDate: "",
+    assignee: "You",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    title: "Work for clients",
+    status: "todo",
+    priority: "medium",
+    dueDate: "",
+    assignee: "You",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+function readStoredTasks() {
+  if (!isHostedRuntime) {
+    return null;
+  }
+
+  try {
+    const storedTasks = window.localStorage.getItem(STORAGE_KEY);
+    return storedTasks ? JSON.parse(storedTasks) : initialTasks;
+  } catch {
+    return initialTasks;
+  }
+}
+
+function writeStoredTasks(nextTasks) {
+  if (!isHostedRuntime) {
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextTasks));
+}
+
+function getNextTaskId(currentTasks) {
+  return currentTasks.reduce((maxId, task) => Math.max(maxId, Number(task.id) || 0), 0) + 1;
+}
 
 async function requestJson(url, options) {
   const response = await fetch(url, options);
@@ -47,10 +94,6 @@ function formatDueDate(dueDate) {
     month: "short",
     day: "numeric",
   }).format(new Date(dueDate));
-}
-
-function getAvatar(task) {
-  return avatars[task.id % avatars.length];
 }
 
 function Toast({ message }) {
@@ -300,7 +343,6 @@ function TaskCard({ task, onDragStart, onAskDelete, onAskEdit, onChangeStatus })
       </div>
       <h3>{task.title}</h3>
       <div className="task-meta">
-        <span className="avatar">{getAvatar(task)}</span>
         <span>{task.assignee || "You"}</span>
         <span className="dot-separator" aria-hidden="true" />
         <span>{formatDueDate(task.dueDate)}</span>
@@ -433,6 +475,12 @@ export default function App() {
     setError("");
 
     try {
+      const storedTasks = readStoredTasks();
+      if (storedTasks) {
+        setTasks(storedTasks);
+        return;
+      }
+
       const data = await requestJson(API_URL);
       setTasks(data);
     } catch (err) {
@@ -462,6 +510,24 @@ export default function App() {
     setError("");
 
     try {
+      if (isHostedRuntime) {
+        const createdTask = {
+          id: getNextTaskId(tasks),
+          title: form.title.trim(),
+          priority: form.priority,
+          status: form.status,
+          dueDate: form.dueDate,
+          assignee: "You",
+          createdAt: new Date().toISOString(),
+        };
+        const nextTasks = [...tasks, createdTask];
+        setTasks(nextTasks);
+        writeStoredTasks(nextTasks);
+        setForm({ title: "", priority: "medium", status: "todo", dueDate: "" });
+        showToast("Task created");
+        return;
+      }
+
       const createdTask = await requestJson(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -491,12 +557,17 @@ export default function App() {
     }
 
     const previousTasks = tasks;
-    setTasks((currentTasks) =>
-      currentTasks.map((item) => (item.id === id ? { ...item, status } : item)),
-    );
+    const optimisticTasks = tasks.map((item) => (item.id === id ? { ...item, status } : item));
+    setTasks(optimisticTasks);
     setError("");
 
     try {
+      if (isHostedRuntime) {
+        writeStoredTasks(optimisticTasks);
+        showToast(`Moved to ${columns.find((column) => column.id === status).title}`);
+        return;
+      }
+
       const updatedTask = await requestJson(`${API_URL}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -526,6 +597,15 @@ export default function App() {
     setError("");
 
     try {
+      if (isHostedRuntime) {
+        const nextTasks = tasks.filter((task) => task.id !== id);
+        setTasks(nextTasks);
+        writeStoredTasks(nextTasks);
+        setTaskToDelete(null);
+        showToast("Task deleted");
+        return;
+      }
+
       await requestJson(`${API_URL}/${id}`, { method: "DELETE" });
       setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
       setTaskToDelete(null);
@@ -545,6 +625,16 @@ export default function App() {
     setError("");
 
     try {
+      if (isHostedRuntime) {
+        const updatedTask = { ...tasks.find((task) => task.id === id), ...updates };
+        const nextTasks = tasks.map((task) => (task.id === id ? updatedTask : task));
+        setTasks(nextTasks);
+        writeStoredTasks(nextTasks);
+        setTaskToEdit(null);
+        showToast("Task updated");
+        return;
+      }
+
       const updatedTask = await requestJson(`${API_URL}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
